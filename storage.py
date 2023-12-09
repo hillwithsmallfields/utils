@@ -129,3 +129,30 @@ def load(filename):
 
 def save(filename, data):
     return WRITERS[os.path.splitext(filename)](filename, data)
+
+def function_cached_with_file(function, filename):
+    return (load(filename)
+            if os.path.exists(filename)
+            else save(filename, function()))
+
+def modified(filename):
+    return os.path.getmtime(filename)
+
+def in_modification_order(filenames):
+    return sorted(filenames, key=modified)
+
+def most_recently_modified(filenames):
+    return in_modification_order(filenames)[-1]
+
+def combined(destination, combiner, *origins):
+    """If any of the origin files have been updated since the destination was,
+    run the combiner function on their contents and write its results
+    to the destination, returning the result.
+
+    Otherwise, read and return the destination file."""
+    return (save(destination,
+                 combiner(*[load[origin]
+                            for origin in origins]))
+            if (modified(destination)
+                < modified(most_recently_modified(origins)))
+            else load(destination))

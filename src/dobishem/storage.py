@@ -112,39 +112,39 @@ def read_json(filename):
 def write_json(filename, data):
     """Write a JSON file."""
     with open_for_read(filename, 'w') as outstream:
-        json.dump(outstream)
+        json.dump(data, outstream)
     return data
 
 def read_yaml(filename):
     """Read a YAML file."""
     with open_for_read(filename) as instream:
-        return yaml.safeload(instream)
+        return yaml.safe_load(instream)
 
 def write_yaml(filename, data):
     """Write a YAML file."""
     with open_for_read(filename, 'w') as outstream:
-        yaml.dump(outstream)
+        yaml.dump(data, outstream)
     return data
 
 READERS = {
-    "csv": default_read_csv,
-    "json": read_json,
-    "yaml": read_yaml,
+    ".csv": default_read_csv,
+    ".json": read_json,
+    ".yaml": read_yaml,
     }
 
 WRITERS = {
-    "csv": default_write_csv,
-    "json": write_json,
-    "yaml": write_yaml,
+    ".csv": default_write_csv,
+    ".json": write_json,
+    ".yaml": write_yaml,
     }
 
 def load(filename):
     """Read a file, finding a suitable reader function for the filename."""
-    return READERS[os.path.splitext(filename)](filename)
+    return READERS[os.path.splitext(filename)[1]](filename)
 
 def save(filename, data):
     """Write a file, finding a suitable writer function for the filename."""
-    return WRITERS[os.path.splitext(filename)](filename, data)
+    return WRITERS[os.path.splitext(filename)[1]](filename, data)
 
 def function_cached_with_file(function, filename):
     """Read a file and return its contents.

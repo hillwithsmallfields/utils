@@ -3,29 +3,38 @@
 """Utility functions for reading and writing files.
 
 The writer functions return what they have written,
-so can be used in a passthrough manner."""
+so can be used in a passthrough manner.
+
+All the functions using filenames expand environment variables and '~'
+in the names.
+"""
 
 from collections import defaultdict
 import csv
+import glob
 import json
 import os
 import yaml
 
-def expand(filename):
+def _expand(filename):
+    """Expand environment variables and '`~' in a filename."""
     return os.path.expandvars(os.path.expanduser(filename))
 
 def open_for_read(filename, *args, **kwargs):
-    return open(expand(filename), *args, **kwargs)
+    """Return an input stream for the named file."""
+    return open(_expand(filename), *args, **kwargs)
 
 def open_for_write(filename, *args, **kwargs):
-    full_name = expand(filename)
+    """Return an output stream to the named file.
+    If necessary, create the directory the file is to go into."""
+    full_name = _expand(filename)
     os.makedirs(os.path.dirname(full_name), exists_ok=True)
-    return open(expand(filename), 'w', *args, **kwargs)
+    return open(full_name, 'w', *args, **kwargs)
 
 def read_csv(
         filename,
         result_type=list,
-        row_type=list,
+        row_type=dict,
         key_column=None,
 ):
     """Read a CSV file, returning a structure according to result_type.
@@ -54,7 +63,8 @@ def read_csv(
                 else rows)
 
 def default_read_csv(filename):
-    return read_csv(filename, result_type=set, row_type=dict, key_column='Date')
+    """Read a CSV file as for a list of dated entries."""
+    return read_csv(filename, key_column='Date')
 
 def write_csv(
         filename,
@@ -92,22 +102,27 @@ def write_csv(
     return data
 
 def default_write_csv(filename, data):
+    """Write a CSV file as for a list of dated entries."""
     return write_csv(filename, data, sort_column="Date")
 
 def read_json(filename):
+    """Read a JSON file."""
     with open_for_read(filename) as instream:
         return json.load(instream)
 
 def write_json(filename, data):
+    """Write a JSON file."""
     with open_for_read(filename, 'w') as outstream:
         json.dump(outstream)
     return data
 
 def read_yaml(filename):
+    """Read a YAML file."""
     with open_for_read(filename) as instream:
         return yaml.safeload(instream)
 
 def write_yaml(filename, data):
+    """Write a YAML file."""
     with open_for_read(filename, 'w') as outstream:
         yaml.dump(outstream)
     return data
@@ -125,23 +140,35 @@ WRITERS = {
     }
 
 def load(filename):
+    """Read a file, finding a suitable reader function for the filename."""
     return READERS[os.path.splitext(filename)](filename)
 
 def save(filename, data):
+    """Write a file, finding a suitable writer function for the filename."""
     return WRITERS[os.path.splitext(filename)](filename, data)
 
 def function_cached_with_file(function, filename):
+    """Read a file and return its contents.
+    If the file does not exist, run a function to create the contents,
+    write them to the file, and return them."""
     return (load(filename)
             if os.path.exists(filename)
             else save(filename, function()))
 
 def modified(filename):
+    """Return the modification time of a file."""
     return os.path.getmtime(filename)
 
 def in_modification_order(filenames):
+    """"Return a list of filenames sorted into modification order."""
     return sorted(filenames, key=modified)
 
 def most_recently_modified(filenames):
+    """Return the most recently modified of a list of files.
+    If the filenames are given as a string rather than a list,
+    apply shell-style globbing to convert it to a list."""
+    if isinstance(filenames, str):
+        filenames = glob.glob(filenames)
     return in_modification_order(filenames)[-1]
 
 def combined(destination, combiner, origins):

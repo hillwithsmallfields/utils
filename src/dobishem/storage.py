@@ -28,7 +28,7 @@ def open_for_write(filename, *args, **kwargs):
     """Return an output stream to the named file.
     If necessary, create the directory the file is to go into."""
     full_name = _expand(filename)
-    os.makedirs(os.path.dirname(full_name), exists_ok=True)
+    os.makedirs(os.path.dirname(full_name), exist_ok=True)
     return open(full_name, 'w', *args, **kwargs)
 
 def read_csv(
@@ -48,18 +48,18 @@ def read_csv(
     """
     with open_for_read(filename) as instream:
         rows = list(csv.DictReader(instream)
-                    if isinstance(row_type, dict)
-                    else (tuple(row) for row in csv.reader(instream))
-                    if isinstance(row_type, tuple)
-                    else csv.reader(instream))
-        if isinstance(result_type, set):
-            result = defaultdict
+                    if issubclass(row_type, dict)
+                    else ((tuple(row) for row in csv.reader(instream))
+                          if issubclass(row_type, tuple)
+                          else csv.reader(instream)))
+        if issubclass(result_type, set):
+            result = defaultdict()
             for row in rows:
                 result[row[key_column]].append(row)
             return result
         return ({row[key_column]: row
                  for row in rows}
-                if isinstance(result, dict)
+                if issubclass(result_type, dict)
                 else rows)
 
 def default_read_csv(filename):
@@ -70,7 +70,7 @@ def write_csv(
         filename,
         data,
         flatten=False,
-        sort_column=None
+        sort_columns=[]
 ):
     """Write a CSV file from a list or dict of lists or dicts,
     or, if flatten is true, a dict or list of collections
@@ -82,19 +82,18 @@ def write_csv(
                          *(list(row) for row in rows_or_groups))
             if flatten
             else rows_or_groups)
-    headers = (
-               else None)
-    if sort_column:
-        rows = sorted(rows, key=lambda row: row[sort_column])
+    if sort_columns:
+        rows = sorted(rows, key=lambda row: [row[k] for k in sort_columns])
     with open_for_write(filename) as outstream:
         rows_are_dicts = isinstance(rows[0], dict)
-        writer = (csv.DictWriter(fieldnames=([sort_column]
+        writer = (csv.DictWriter(outstream,
+                                 fieldnames=(sort_columns
                                              + sorted(
                                                  (set().union(*(set(row.keys())
                                                                 for row in rows)))
-                                                 - set(sort_column))))
+                                                 - set(sort_columns))))
                   if rows_are_dicts
-                  else csv.writer())
+                  else csv.writer(outstream))
         if rows_are_dicts:
             writer.writeheader()
         for row in rows:
@@ -103,7 +102,7 @@ def write_csv(
 
 def default_write_csv(filename, data):
     """Write a CSV file as for a list of dated entries."""
-    return write_csv(filename, data, sort_column="Date")
+    return write_csv(filename, data, sort_columns=["Date", "Item"])
 
 def read_json(filename):
     """Read a JSON file."""

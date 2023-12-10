@@ -92,7 +92,7 @@ def write_csv(
     return data
 
 def default_write_csv(filename, data):
-    return write_csv(filename, data, flatten=True, sort_column="Date")
+    return write_csv(filename, data, sort_column="Date")
 
 def read_json(filename):
     with open_for_read(filename) as instream:
@@ -144,15 +144,26 @@ def in_modification_order(filenames):
 def most_recently_modified(filenames):
     return in_modification_order(filenames)[-1]
 
-def combined(destination, combiner, *origins):
-    """If any of the origin files have been updated since the destination was,
-    run the combiner function on their contents and write its results
-    to the destination, returning the result.
+def combined(destination, combiner, origins):
+    """If any of the origin files have been updated since the destination
+    was, run the combiner function on their contents and write its
+    result to the destination, returning the result.
 
-    Otherwise, read and return the destination file."""
+    The 'combiner' argument is a function taking a list of lists,
+    typically, the result of reading multiple CSV files, and its
+    result would typically be a list to be written to a CSV file.
+
+    The 'origins' argument is a dictionary binding filename strings to
+    row processing functions, so this function can be used to
+    transform incoming data and merge it into a collection.
+
+    Otherwise, read and return the destination file.
+
+    """
     return (save(destination,
-                 combiner(*[load[origin]
-                            for origin in origins]))
+                 combiner([[converter(entry)
+                            for entry in load[origin]]
+                           for origin, converter in origins.items()]))
             if (modified(destination)
                 < modified(most_recently_modified(origins)))
             else load(destination))

@@ -158,6 +158,9 @@ def modified(filename):
     """Return the modification time of a file."""
     return os.path.getmtime(filename)
 
+def file_newer_than_file(a, b):
+    return os.path.getmtime(a) > os.path.getmtime(b)
+
 def in_modification_order(filenames):
     """"Return a list of filenames sorted into modification order."""
     return sorted(filenames, key=modified)

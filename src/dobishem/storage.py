@@ -185,14 +185,15 @@ def combined(destination, combiner, origins):
 
     The 'origins' argument is a dictionary binding filename strings to
     row processing functions, so this function can be used to
-    transform incoming data and merge it into a collection.
+    transform incoming data and merge it into a collection.  If a row
+    processing function returns `None`, the row is skipped.
 
     Otherwise, read and return the destination file.
-
     """
     return (save(destination,
-                 combiner([[converter(entry)
-                            for entry in load[origin]]
+                 combiner([[entry
+                            for raw in load[origin]
+                            if (entry := converter(raw)) is not None]
                            for origin, converter in origins.items()]))
             if (modified(destination)
                 < modified(most_recently_modified(origins)))

@@ -66,6 +66,11 @@ def default_read_csv(filename):
     """Read a CSV file as for a list of dated entries."""
     return read_csv(filename, key_column='Date')
 
+def column_headers(table):
+    """Return the column headers of a table."""
+    return (set().union(*(set(row.keys())
+                          for row in table)))
+
 def write_csv(
         filename,
         data,
@@ -88,9 +93,7 @@ def write_csv(
         rows_are_dicts = isinstance(rows[0], dict)
         writer = (csv.DictWriter(outstream,
                                  fieldnames=(sort_columns
-                                             + sorted(
-                                                 (set().union(*(set(row.keys())
-                                                                for row in rows)))
+                                             + sorted(column_headers(rows)
                                                  - set(sort_columns))))
                   if rows_are_dicts
                   else csv.writer(outstream))
@@ -102,7 +105,13 @@ def write_csv(
 
 def default_write_csv(filename, data):
     """Write a CSV file as for a list of dated entries."""
-    return write_csv(filename, data, sort_columns=["Date", "Item"])
+    columns = column_headers(data)
+    return write_csv(
+        filename, data,
+        # Use whichever likely sort columns are present in the data
+        sort_columns=[col
+                      for col in ["Date", "Time", "Account", "Item", "Details"]
+                      if col in columns])
 
 def read_json(filename):
     """Read a JSON file."""
@@ -156,8 +165,10 @@ def function_cached_with_file(function, filename):
             else save(filename, function()))
 
 def modified(filename):
-    """Return the modification time of a file."""
-    return os.path.getmtime(_expand(filename))
+    """Return the modification time of a file.
+    If the file does not exist, the epoch is returned."""
+    fname = _expand(filename)
+    return os.path.getmtime(fname) if os.path.exists(fname) else 0
 
 def file_newer_than_file(a, b):
     return os.path.getmtime(_expand(a)) > os.path.getmtime(_expand(b))

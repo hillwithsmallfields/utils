@@ -192,7 +192,7 @@ def combined(destination, combiner, origins):
     """
     return (save(destination,
                  combiner([[entry
-                            for raw in load[origin]
+                            for raw in load(origin)
                             if (entry := converter(raw)) is not None]
                            for origin, converter in origins.items()]))
             if (modified(destination)

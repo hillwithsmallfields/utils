@@ -1,7 +1,7 @@
 """Some generic data operations, mostly for data used with csv.DictReader and csv.DictWriter.."""
 
 import datetime
-from dates import as_date
+from dobishem.dates import as_date
 
 def rename_columns(raw, column_renames):
     """Returns a row dictionary or a header list with columns renamed."""

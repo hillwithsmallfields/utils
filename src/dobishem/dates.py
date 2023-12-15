@@ -1,5 +1,6 @@
 """Some date and time handling functions."""
 
+import calendar
 import datetime
 import re
 
@@ -32,7 +33,7 @@ def as_date(date_in):
                   if isinstance(date_in, datetime.datetime)
                   else date_in))
 
-def back_from(when, years_back, months_back, days_back):
+def back_from(when, years_back=0, months_back=0, days_back=0):
     if isinstance(when, str):
         when = datetime.date.fromisoformat(when)
     if months_back and months_back >= 12:

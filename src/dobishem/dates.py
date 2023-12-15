@@ -5,31 +5,32 @@ import re
 
 ISO_DATE = re.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}")
 SLASHED_DATE = re.compile("[0-9]{4}/[0-9]{2}/[0-9]{2}")
+BACKWARDS_DATE = re.compile("[0-9]{d}/[0-9]{2}/[0-9]{4}")
 
 def normalize_date(date_in):
     if ISO_DATE.match(date_in):
         return date_in
     if SLASHED_DATE.match(date_in):
         return date_in.replace('/', '-')
+    if BACKWARDS_DATE.match(date_in):
+        return f"{date_in[6:10]}-{date_in[3:5]}-{date_in[0:2]}"
     return date_in
 
 def as_datetime(date_in):
-    return (date_in
-            if isinstance(date_in, datetime.datetime)
-            else (datetime.datetime.fromisoformat(datetime)
-                  if isinstance(date_in, str)
-                  else (datetime.datetime.combine(date_in, datetime.time())
-                        if isinstance(date_in, datetime.date)
-                        else date_in)))
+    """Get a datetime from a string, a date, or a datetime."""
+    return (datetime.datetime.fromisoformat(datetime)
+            if isinstance(date_in, str)
+            else (datetime.datetime.combine(date_in, datetime.time())
+                  if isinstance(date_in, datetime.date)
+                  else date_in))
 
 def as_date(date_in):
-    return (date_in
-            if isinstance(date_in, datetime.date)
-            else (datetime.date.fromisoformat(datetime)
-                  if isinstance(date_in, str)
-                  else (date_in.date
-                        if isinstance(date_in, datetime.datetime)
-                        else date_in)))
+    """Get a date from a string, a date, or a datetime."""
+    return (datetime.date.fromisoformat(date_in)
+            if isinstance(date_in, str)
+            else (date_in.date
+                  if isinstance(date_in, datetime.datetime)
+                  else date_in))
 
 def back_from(when, years_back, months_back, days_back):
     if isinstance(when, str):

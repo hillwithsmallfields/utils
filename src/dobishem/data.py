@@ -1,7 +1,6 @@
 """Some generic data operations, mostly for data used with csv.DictReader and csv.DictWriter.."""
 
 import datetime
-from dobishem.dates import as_date
 
 def rename_columns(raw, column_renames):
     """Returns a row dictionary or a header list with columns renamed."""
@@ -19,11 +18,3 @@ def matches(row, match_key, match_value):
     If no column is given, returns True."""
     return (match_key is None
             or row.get(match_key) == match_value)
-
-def entries_between_dates(incoming, starting, ending):
-    "Return the entries in a list that are between two given dates."
-    starting = as_date(starting)
-    ending = as_date(ending)
-    return [entry
-            for entry in incoming
-            if starting <= as_date(entry['Date']) <= ending]

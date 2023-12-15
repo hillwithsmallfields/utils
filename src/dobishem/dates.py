@@ -80,12 +80,10 @@ later = datetime.timedelta(0, 1)
 def yesterday():
     return back_from(datetime.date.today(), 0, 0, 1)
 
-def as_date(when):
-    """Return a datetime.date, from a string or other data."""
-    return (when
-            if isinstance(when, datetime.date)
-            else (datetime.date.fromisoformat(when)
-                  if isinstance(when, str)
-                  else (when.date()
-                        if isinstance(when, datetime.datetime)
-                        else when)))
+def entries_between_dates(incoming, starting, ending):
+    "Return the entries in a list that are between two given dates."
+    starting = as_date(starting)
+    ending = as_date(ending)
+    return [entry
+            for entry in incoming
+            if starting <= as_date(entry['Date']) <= ending]

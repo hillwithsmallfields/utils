@@ -16,6 +16,7 @@ class BeginAndEndMessages:
         self.margin = margin
         self.started = None
         self.prefix = ""
+        self.prefixes = []
 
     def __enter__(self):
         if self.verbose:

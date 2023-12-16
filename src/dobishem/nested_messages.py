@@ -2,7 +2,7 @@
 
 import datetime
 
-prefixes = list()
+message_prefixes_as_list = list()
 
 class BeginAndEndMessages:
 
@@ -15,13 +15,13 @@ class BeginAndEndMessages:
         self.about = about
         self.margin = margin
         self.started = None
-        self.prefix = "".join(prefixes)
+        self.prefix = "".join(message_prefixes_as_list)
 
     def __enter__(self):
         if self.verbose:
             print(self.prefix + "Beginning", self.about)
-        prefixes.append(self.margin)
-        self.prefix = "".join(prefixes)
+        message_prefixes_as_list.append(self.margin)
+        self.prefix = "".join(message_prefixes_as_list)
         self.started = datetime.datetime.now()
         return self
 
@@ -30,8 +30,8 @@ class BeginAndEndMessages:
 
     def __exit__(self, exc_type, _exc_val, _exc_tb):
         time_taken = datetime.datetime.now() - self.started
-        prefixes.pop()
-        self.prefix = "".join(prefixes)
+        message_prefixes_as_list.pop()
+        self.prefix = "".join(message_prefixes_as_list)
         if self.verbose:
             print(self.prefix + ("Abandoned" if exc_type else "Finished"), self.about, "in", time_taken)
 

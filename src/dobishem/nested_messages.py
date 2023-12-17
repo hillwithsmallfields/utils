@@ -17,7 +17,7 @@ class BeginAndEndMessages:
         self.started = None
         self._set_prefix()
 
-    def _set_prefix(self, label):
+    def _set_prefix(self):
         self.prefix = "".join(message_prefixes_as_list)
 
     def __enter__(self):

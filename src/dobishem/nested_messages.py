@@ -38,13 +38,13 @@ class BeginAndEndMessages:
         if self.verbose:
             print(self.prefix + ("Abandoned" if exc_type else "Finished"), self.about, "in", time_taken)
 
-if __name__ == "__main__":
-    with BeginAndEndMessages("outer one"):
-        with BeginAndEndMessages("middle one") as mid:
-            mid.print("inside mid one")
-            with BeginAndEndMessages("inner") as inner:
-                inner.print("inner")
-        with BeginAndEndMessages("middle two") as mid:
-            mid.print("inside mid two")
-        with BeginAndEndMessages("middle three") as mid:
-            mid.print("inside mid three")
+# if __name__ == "__main__":
+#     with BeginAndEndMessages("outer one"):
+#         with BeginAndEndMessages("middle one") as mid:
+#             mid.print("inside mid one")
+#             with BeginAndEndMessages("inner") as inner:
+#                 inner.print("inner")
+#         with BeginAndEndMessages("middle two") as mid:
+#             mid.print("inside mid two")
+#         with BeginAndEndMessages("middle three") as mid:
+#             mid.print("inside mid three")

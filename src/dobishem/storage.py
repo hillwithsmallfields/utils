@@ -36,6 +36,7 @@ def read_csv(
         result_type=list,
         row_type=dict,
         key_column=None,
+        empty_for_missing=True,
 ):
     """Read a CSV file, returning a structure according to result_type.
     The result types are:
@@ -46,6 +47,10 @@ def read_csv(
     The elements of the structure are tuples, lists or dicts,
     according to row_type.
     """
+    if not os.path.exists(_expand(filename)):
+        if empty_for_missing:
+            return dict() if issubclass(result_type, dict) else list()
+        raise FileNotFoundError(filename)
     with open_for_read(filename) as instream:
         rows = list(csv.DictReader(instream)
                     if issubclass(row_type, dict)

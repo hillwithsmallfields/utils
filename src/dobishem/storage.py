@@ -80,11 +80,14 @@ def write_csv(
         filename,
         data,
         flatten=False,
-        sort_columns=[]
+        sort_columns=[],
+        silently_skip_missing_data=True,
 ):
     """Write a CSV file from a list or dict of lists or dicts,
     or, if flatten is true, a dict or list of collections
     of dicts or lists."""
+    if silently_skip_missing_data and not data:
+        return data
     rows_or_groups = (data.values()
                       if isinstance(data, dict)
                       else data)

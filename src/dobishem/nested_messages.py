@@ -4,6 +4,9 @@ import datetime
 
 message_prefixes_as_list = list()
 
+ONE_MINUTE = datetime.timedelta(seconds=60)
+ONE_SECOND = datetime.timedelta(seconds=1)
+
 class BeginAndEndMessages:
 
     """Run some code with nested begin and end/abandoned messages."""
@@ -36,15 +39,9 @@ class BeginAndEndMessages:
         message_prefixes_as_list.pop()
         self._set_prefix()
         if self.verbose:
-            print(self.prefix + ("Abandoned" if exc_type else "Finished"), self.about, "in", time_taken)
-
-# if __name__ == "__main__":
-#     with BeginAndEndMessages("outer one"):
-#         with BeginAndEndMessages("middle one") as mid:
-#             mid.print("inside mid one")
-#             with BeginAndEndMessages("inner") as inner:
-#                 inner.print("inner")
-#         with BeginAndEndMessages("middle two") as mid:
-#             mid.print("inside mid two")
-#         with BeginAndEndMessages("middle three") as mid:
-#             mid.print("inside mid three")
+            message = self.prefix + ("Abandoned " if exc_type else "Finished ") + self.about
+            if time_taken >= ONE_MINUTE:
+                message += " in %s" % time_taken
+            elif time_taken >= ONE_SECOND:
+                message += "in %g sec" % time_taken.total_seconds()
+            print(message)

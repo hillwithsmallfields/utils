@@ -43,5 +43,5 @@ class BeginAndEndMessages:
             if time_taken >= ONE_MINUTE:
                 message += " in %s" % time_taken
             elif time_taken >= ONE_SECOND:
-                message += " in %g sec" % time_taken.total_seconds()
+                message += " in %.3g sec" % time_taken.total_seconds()
             print(message)

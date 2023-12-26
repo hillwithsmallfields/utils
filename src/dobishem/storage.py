@@ -193,7 +193,7 @@ def most_recently_modified(filenames):
     """Return the most recently modified of a list of files."""
     return in_modification_order(filenames)[-1]
 
-def combined(destination, combiner, origins):
+def combined(destination, combiner, origins, reloader=lambda x: x):
     """If any of the origin files have been updated since the destination
     was, run the combiner function on their contents and write its
     result to the destination, returning the result.
@@ -207,7 +207,8 @@ def combined(destination, combiner, origins):
     transform incoming data and merge it into a collection.  If a row
     processing function returns `None`, the row is skipped.
 
-    Otherwise, read and return the destination file.
+    Otherwise, read and return the destination file, applying the
+    'reloader' argument to each entry in it.
     """
     return (save(destination,
                  combiner([[entry
@@ -216,4 +217,6 @@ def combined(destination, combiner, origins):
                            for origin, converter in origins.items()]))
             if (modified(destination)
                 < modified(most_recently_modified(origins)))
-            else load(destination))
+            else [reload_entry
+                  for reload_raw in load(destination)
+                  if (reload_entry := reloader(reload_raw))])

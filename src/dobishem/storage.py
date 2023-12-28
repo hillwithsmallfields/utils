@@ -155,12 +155,23 @@ WRITERS = {
     ".yaml": write_yaml,
     }
 
-def load(filename):
+def load(
+        filename,
+        verbose=False,
+):
     """Read a file, finding a suitable reader function for the filename."""
+    if verbose:
+        print("Reading", filename)
     return READERS[os.path.splitext(filename)[1]](filename)
 
-def save(filename, data):
+def save(
+        filename,
+        data,
+        verbose=False,
+):
     """Write a file, finding a suitable writer function for the filename."""
+    if verbose:
+        print("Writing", filename)
     return WRITERS[os.path.splitext(filename)[1]](filename, data)
 
 def function_cached_with_file(function, filename):
@@ -193,7 +204,13 @@ def most_recently_modified(filenames):
     """Return the most recently modified of a list of files."""
     return in_modification_order(filenames)[-1]
 
-def combined(destination, combiner, origins, reloader=lambda x: x):
+def combined(
+        destination,
+        combiner,
+        origins,
+        reloader=lambda x: x,
+        verbose=False,
+):
     """If any of the origin files have been updated since the destination
     was, run the combiner function on their contents and write its
     result to the destination, returning the result.
@@ -212,9 +229,10 @@ def combined(destination, combiner, origins, reloader=lambda x: x):
     """
     return (save(destination,
                  combiner([[entry
-                            for raw in load(origin)
+                            for raw in load(origin, verbose=verbose)
                             if (entry := converter(raw)) is not None]
-                           for origin, converter in origins.items()]))
+                           for origin, converter in origins.items()]),
+                 verbose=verbose)
             if (modified(destination)
                 < modified(most_recently_modified(origins)))
             else [reload_entry

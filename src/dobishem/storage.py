@@ -236,5 +236,5 @@ def combined(
             if (modified(destination)
                 < modified(most_recently_modified(origins)))
             else [reload_entry
-                  for reload_raw in load(destination)
+                  for reload_raw in load(destination, verbose)
                   if (reload_entry := reloader(reload_raw))])

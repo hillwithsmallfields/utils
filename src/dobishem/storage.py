@@ -158,20 +158,28 @@ WRITERS = {
 def load(
         filename,
         verbose=False,
+        messager=None,
 ):
     """Read a file, finding a suitable reader function for the filename."""
     if verbose:
-        print("Reading", filename)
+        if messager:
+            messager.print(f"Reading {filename}")
+        else:
+            print("Reading", filename)
     return READERS[os.path.splitext(filename)[1]](filename)
 
 def save(
         filename,
         data,
         verbose=False,
+        messager=None,
 ):
     """Write a file, finding a suitable writer function for the filename."""
     if verbose:
-        print("Writing", filename)
+        if messager:
+            messager.print(f"Writing {filename}")
+        else:
+            print("Writing", filename)
     return WRITERS[os.path.splitext(filename)[1]](filename, data)
 
 def function_cached_with_file(function, filename):
@@ -210,6 +218,7 @@ def combined(
         origins,
         reloader=lambda x: x,
         verbose=False,
+        messager=None,
 ):
     """If any of the origin files have been updated since the destination
     was, run the combiner function on their contents and write its
@@ -229,12 +238,17 @@ def combined(
     """
     return (save(destination,
                  combiner([[entry
-                            for raw in load(origin, verbose=verbose)
+                            for raw in load(origin,
+                                            verbose=verbose,
+                                            messager=messager)
                             if (entry := converter(raw)) is not None]
                            for origin, converter in origins.items()]),
-                 verbose=verbose)
+                 verbose=verbose,
+                 messager=messager)
             if (modified(destination)
                 < modified(most_recently_modified(origins)))
             else [reload_entry
-                  for reload_raw in load(destination, verbose)
+                  for reload_raw in load(destination,
+                                         verbose=verbose,
+                                         messager=messager)
                   if (reload_entry := reloader(reload_raw))])

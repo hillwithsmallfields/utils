@@ -194,6 +194,8 @@ def function_cached_with_file(function, filename):
 def modified(filename):
     """Return the modification time of a file.
     If the file does not exist, the epoch is returned."""
+    if filename is None:
+        return 0
     fname = _expand(filename)
     return os.path.getmtime(fname) if os.path.exists(fname) else 0
 
@@ -210,7 +212,8 @@ def in_modification_order(filenames):
 
 def most_recently_modified(filenames):
     """Return the most recently modified of a list of files."""
-    return in_modification_order(filenames)[-1]
+    names = in_modification_order(filenames)
+    return names[-1] if names else None
 
 def combined(
         destination,

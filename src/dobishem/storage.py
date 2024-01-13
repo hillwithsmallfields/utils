@@ -49,7 +49,7 @@ def read_csv(
     """
     if not os.path.exists(_expand(filename)):
         if empty_for_missing:
-            return dict() if issubclass(result_type, dict) else list()
+            return result_type()
         raise FileNotFoundError(filename)
     with open_for_read(filename) as instream:
         rows = list(csv.DictReader(instream)

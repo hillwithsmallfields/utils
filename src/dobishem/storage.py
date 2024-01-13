@@ -37,6 +37,7 @@ def read_csv(
         row_type=dict,
         key_column=None,
         empty_for_missing=True,
+        transform_row=None,
 ):
     """Read a CSV file, returning a structure according to result_type.
     The result types are:
@@ -57,6 +58,9 @@ def read_csv(
                     else ((tuple(row) for row in csv.reader(instream))
                           if issubclass(row_type, tuple)
                           else csv.reader(instream)))
+        if transform_row:
+            rows = [transform_row(row)
+                    for row in rows]
         if issubclass(result_type, set):
             result = defaultdict(set)
             for row in rows:

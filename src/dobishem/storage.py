@@ -58,9 +58,9 @@ def read_csv(
                           if issubclass(row_type, tuple)
                           else csv.reader(instream)))
         if issubclass(result_type, set):
-            result = defaultdict()
+            result = defaultdict(set)
             for row in rows:
-                result[row[key_column]].append(row)
+                result[row[key_column]].add(row)
             return result
         return ({row[key_column]: row
                  for row in rows}

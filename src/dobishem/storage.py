@@ -10,6 +10,7 @@ in the names.
 """
 
 from collections import defaultdict
+from frozendict import frozendict
 import csv
 import glob
 import json
@@ -47,6 +48,10 @@ def read_csv(
 
     The elements of the structure are tuples, lists or dicts,
     according to row_type.
+
+    If a function is given for the transform_row argument, it is
+    called on each row, and its result is used instead of the original
+    row.  If it returns a false value for a row, that row is not used.
     """
     if not os.path.exists(_expand(filename)):
         if empty_for_missing:
@@ -59,12 +64,13 @@ def read_csv(
                           if issubclass(row_type, tuple)
                           else csv.reader(instream)))
         if transform_row:
-            rows = [transform_row(row)
-                    for row in rows]
+            rows = [row
+                    for raw in rows
+                    if (row := transform_row(raw))]
         if issubclass(result_type, set):
             result = defaultdict(set)
             for row in rows:
-                result[row[key_column]].add(row)
+                result[row[key_column]].add(frozendict(row))
             return result
         return ({row[key_column]: row
                  for row in rows}

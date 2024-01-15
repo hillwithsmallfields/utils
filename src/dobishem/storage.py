@@ -283,7 +283,7 @@ class FileProtection:
         with open(self.filename, 'b') as original:
             self.data = original.read()
 
-    def __exit__(self, _, _, _):
+    def __exit__(self, exc_type, exc_value, traceback):
         if os.stat(self.filename).st_size < (len(self.data) * self.max_reduction):
             with open(self.filename, 'wb') as restoration:
                 restoration.write(self.data)

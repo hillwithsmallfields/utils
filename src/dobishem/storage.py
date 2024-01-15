@@ -15,6 +15,7 @@ import csv
 import glob
 import json
 import os
+import tempfile
 import yaml
 
 def _expand(filename):
@@ -266,3 +267,23 @@ def combined(
                                          verbose=verbose,
                                          messager=messager)
                   if (reload_entry := reloader(reload_raw))])
+
+class FileProtection:
+
+    """Check how a file size has changed in this context.
+
+    If it has reduced too much, restore the original contents."""
+
+    def __init__(self, filename, max_reduction=0.1):
+        self.filename = filename
+        self.max_reduction = max_reduction
+        self.data = None
+
+    def __enter__(self):
+        with open(self.filename, 'b') as original:
+            self.data = original.read()
+
+    def __exit__(self, _, _, _):
+        if os.stat(self.filename).st_size < (len(self.data) * self.max_reduction):
+            with open(self.filename, 'wb') as restoration:
+                restoration.write(self.data)

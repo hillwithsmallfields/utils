@@ -101,10 +101,11 @@ def write_csv(
     rows_or_groups = (data.values()
                       if isinstance(data, dict)
                       else data)
-    rows = (operator.add([],
-                         *(list(row) for row in rows_or_groups))
-            if flatten
-            else rows_or_groups)
+    rows = list(operator.add([],
+                             *(list(row)
+                               for row in rows_or_groups))
+                if flatten
+                else rows_or_groups)
     rows_are_dicts = isinstance(rows[0], dict)
     if sort_columns:
         rows = sorted(rows, key=lambda row: [row.get(k, "") for k in sort_columns])

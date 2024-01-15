@@ -105,10 +105,10 @@ def write_csv(
                          *(list(row) for row in rows_or_groups))
             if flatten
             else rows_or_groups)
+    rows_are_dicts = isinstance(rows[0], dict)
     if sort_columns:
         rows = sorted(rows, key=lambda row: [row.get(k, "") for k in sort_columns])
     with open_for_write(filename) as outstream:
-        rows_are_dicts = isinstance(rows[0], dict)
         writer = (csv.DictWriter(outstream,
                                  fieldnames=(sort_columns
                                              + sorted(column_headers(rows)

@@ -280,7 +280,7 @@ class FileProtection:
         self.data = None
 
     def __enter__(self):
-        with open(self.filename, 'b') as original:
+        with open(self.filename, 'rb') as original:
             self.data = original.read()
 
     def __exit__(self, exc_type, exc_value, traceback):

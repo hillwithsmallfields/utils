@@ -91,12 +91,14 @@ def write_csv(
         filename,
         data,
         flatten=False,
-        sort_columns=[],
+        sort_columns=None,
         silently_skip_missing_data=True,
 ):
     """Write a CSV file from a list or dict of lists or dicts,
     or, if flatten is true, a dict or list of collections
     of dicts or lists."""
+    if sort_columns is None:
+        sort_columns = []
     if silently_skip_missing_data and not data:
         return data
     rows_or_groups = (data.values()
@@ -193,6 +195,39 @@ def save(
         else:
             print("Writing", filename)
     return WRITERS[os.path.splitext(filename)[1]](filename, data)
+
+class Storage:
+
+    """A storage handler class,
+    providing templated filename generation from named parts."""
+
+    def __init__(
+            self,
+            templates,
+            defaults,
+            base="."):
+        self.templates = templates
+        self.defaults = defaults
+        self.base = base
+
+    def resolve(self,
+                template='default',
+                **kwargs):
+        return _expand(os.path.join(self.base,
+                                    self.templates[template] % (self.defaults | kwargs)))
+
+    def open_for_read(template, **kwargs):
+        return open_for_read(self.resolve(template, kwargs))
+
+    def open_for_write(template, **kwargs):
+        return open_for_write(self.resolve(template, kwargs))
+
+    def load(self, template, **kwargs):
+        return load(self.resolve(template, kwargs))
+
+    def save(self, data, template, **kwargs):
+        return save(self.resolve(template, kwargs),
+                    data)
 
 def function_cached_with_file(function, filename):
     """Read a file and return its contents.

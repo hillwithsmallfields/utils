@@ -213,8 +213,10 @@ class Storage:
     def resolve(self,
                 template='default',
                 **kwargs):
-        return _expand(os.path.join(self.base,
-                                    self.templates[template] % (self.defaults | kwargs)))
+        return _expand(
+            os.path.join(
+                self.base,
+                self.templates.get(template, 'default') % (self.defaults | kwargs)))
 
     def open_for_read(template, **kwargs):
         return open_for_read(self.resolve(template, kwargs))
@@ -223,11 +225,32 @@ class Storage:
         return open_for_write(self.resolve(template, kwargs))
 
     def load(self, template, **kwargs):
-        return load(self.resolve(template, kwargs))
+        return self.load_from(self.resolve(template, kwargs))
+
+    def load_from(self, location):
+        return self.load(location['template'], **location)
 
     def save(self, data, template, **kwargs):
         return save(self.resolve(template, kwargs),
                     data)
+
+    def save_to(self, data, location):
+        return self.save(location['template'], **location)
+
+class UsingFiles(Storage):
+
+    def __init__(self, inputs, outputs, **kwargs):
+        super().__init__(**kwargs)
+        self.inputs = inputs
+        self.outputs = outputs
+
+    def __next__(self):
+        for location in self.inputs:
+            yield self.load_from(location)
+
+    def save(self, *values):
+        for location, content in zip(self.outputs, values):
+            self.save_to(content, location)
 
 def function_cached_with_file(function, filename):
     """Read a file and return its contents.

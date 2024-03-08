@@ -10,13 +10,14 @@ in the names.
 """
 
 from collections import defaultdict
-from frozendict import frozendict
 import csv
 import glob
 import json
+import operator
 import os
-import tempfile
+import re
 import yaml
+from frozendict import frozendict
 
 def _expand(filename):
     """Expand environment variables and '`~' in a filename."""
@@ -202,10 +203,11 @@ class DirectoryIter:
         self.directory = directory
         self.files = directory.contents.copy()
 
-    def __next__():
+    def __next__(self):
         if self.files:
             name = self.files.pop()
             return name, self.directory.storage.load(self.directory.template, name)
+        raise StopIteration
 
 class DirectoryAsDictionary:
 
@@ -213,7 +215,7 @@ class DirectoryAsDictionary:
         self.storage = storage
         self.template = template
         self.dirname = dirname
-        self.contents = sort(os.listdir(dirname))
+        self.contents = sorted(os.listdir(dirname))
 
     def __iter__(self):
         return DirectoryIter(self)
@@ -221,7 +223,10 @@ class DirectoryAsDictionary:
 class Storage:
 
     """A storage handler class,
-    providing templated filename generation from named parts."""
+    providing templated filename generation from named parts.
+
+    If no template is specified (or the template is `True`)
+    one is chosen by the combination of location keys used."""
 
     def __init__(
             self,
@@ -229,38 +234,51 @@ class Storage:
             defaults,
             base="."):
         self.templates = templates
+        self.templates_by_keys = {
+            ":".join(sorted(re.findall(r'%\(([a-z_0-9]+)\)', template))): template
+            for template in self.templates.values()}
         self.defaults = defaults
         self.base = base
+
+    def get_template(self, template_name, kwargs):
+        """Look up an explictly specified template by name,
+        or deduce one from the keys used."""
+        return (self.templates_by_keys[":".join(sorted(kwargs.keys()))]
+                if template_name is True
+                else self.templates.get(template_name, 'default'))
 
     def resolve(self,
                 template,
                 kwargs):
+        """Resolve a location to a filename string."""
         return _expand(
-            os.path.join(
-                self.base,
-                self.templates.get(template, 'default') % (self.defaults | kwargs)))
+            os.path.join(self.base,
+                         self.get_template(template, kwargs) % (self.defaults | kwargs)))
 
     def glob(self, pattern, template, **kwargs):
         return glob.glob(self.resolve(template, kwargs)+pattern)
 
-    def open_for_read(template, **kwargs):
+    def open_for_read(self, template, **kwargs):
         return open_for_read(self.resolve(template, kwargs))
 
-    def open_for_write(template, **kwargs):
+    def open_for_write(self, template, **kwargs):
         return open_for_write(self.resolve(template, kwargs))
 
     def load(self, template, **kwargs):
         return load(self.resolve(template, kwargs))
 
     def load_from(self, location):
-        return self.load(location['template'], **{k: v for k, v in location.items() if k != 'template'})
+        return self.load(location.get('template', True),
+                         **{k: v for k, v in location.items() if k != 'template'})
 
     def save(self, data, template, **kwargs):
         return save(self.resolve(template, kwargs),
                     data)
 
     def save_to(self, data, location):
-        return self.save(data, location['template'], **{k: v for k, v in location.items() if k != 'template'})
+        return self.save(data,
+                         location.get('template', True),
+                         **{k: v for k, v in location.items() if k != 'template'})
 
 class UsingFiles(Storage):
 
@@ -274,7 +292,7 @@ class UsingFiles(Storage):
             yield self.load_from(location)
 
     def save(self, *values):
-        for location, content in zip(self.outputs, values):
+        for location, content in zip(self.outputs, values).items():
             self.save_to(content, location)
 
 def function_cached_with_file(function, filename):

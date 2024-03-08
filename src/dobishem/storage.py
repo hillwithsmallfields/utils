@@ -196,6 +196,28 @@ def save(
             print("Writing", filename)
     return WRITERS[os.path.splitext(filename)[1]](filename, data)
 
+class DirectoryIter:
+
+    def __init__(self, directory):
+        self.directory = directory
+        self.files = directory.contents.copy()
+
+    def __next__():
+        if self.files:
+            name = self.files.pop()
+            return name, self.directory.storage.load(self.directory.template, name)
+
+class DirectoryAsDictionary:
+
+    def __init__(self, storage, template, dirname):
+        self.storage = storage
+        self.template = template
+        self.dirname = dirname
+        self.contents = sort(os.listdir(dirname))
+
+    def __iter__(self):
+        return DirectoryIter(self)
+
 class Storage:
 
     """A storage handler class,
@@ -211,12 +233,15 @@ class Storage:
         self.base = base
 
     def resolve(self,
-                template='default',
-                **kwargs):
+                template,
+                kwargs):
         return _expand(
             os.path.join(
                 self.base,
                 self.templates.get(template, 'default') % (self.defaults | kwargs)))
+
+    def glob(self, pattern, template, **kwargs):
+        return glob.glob(self.resolve(template, kwargs)+pattern)
 
     def open_for_read(template, **kwargs):
         return open_for_read(self.resolve(template, kwargs))
@@ -225,17 +250,17 @@ class Storage:
         return open_for_write(self.resolve(template, kwargs))
 
     def load(self, template, **kwargs):
-        return self.load_from(self.resolve(template, kwargs))
+        return load(self.resolve(template, kwargs))
 
     def load_from(self, location):
-        return self.load(location['template'], **location)
+        return self.load(location['template'], **{k: v for k, v in location.items() if k != 'template'})
 
     def save(self, data, template, **kwargs):
         return save(self.resolve(template, kwargs),
                     data)
 
     def save_to(self, data, location):
-        return self.save(location['template'], **location)
+        return self.save(data, location['template'], **{k: v for k, v in location.items() if k != 'template'})
 
 class UsingFiles(Storage):
 

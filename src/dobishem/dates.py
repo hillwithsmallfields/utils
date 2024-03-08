@@ -33,6 +33,8 @@ def as_date(date_in):
                   if isinstance(date_in, datetime.datetime)
                   else date_in))
 
+# TODO: remove these two and make the callers use dateutil
+
 def back_from(when, years_back=0, months_back=0, days_back=0):
     if isinstance(when, str):
         when = datetime.date.fromisoformat(when)

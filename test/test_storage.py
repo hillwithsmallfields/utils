@@ -24,6 +24,9 @@ FILTERED_REFERENCE = [
     for row in REFERENCE
     ]
 
+TEMPLATES = {'financial': "%(food_type)s/%(aspect)s.%(fileformat)s"}
+TEMPLATE_DEFAULTS = {'fileformat': "csv"}
+
 def test_csv(tmp_path):
     filename = os.path.join(tmp_path, "foo.csv")
     dobishem.storage.default_write_csv(filename, REFERENCE)
@@ -58,3 +61,20 @@ def test_filtered_csv(tmp_path):
     assert dobishem.storage.read_csv(filename,
                                      key_column='Date',
                                      transform_row=lambda row: xrow)
+
+def test_storage_class(tmp_path):
+
+    store = dobishem.storage.Storage(templates=TEMPLATES,
+                                     defaults=TEMPLATE_DEFAULTS,
+                                     base=tmp_path)
+    print("resolved " + store.resolve('financial', {'template': 'financial',
+                                                    'aspect': 'price',
+                                                    'food_type': 'general'}))
+    store.save_to(REFERENCE,
+                  {'template': 'financial',
+                   'aspect': 'price',
+                   'fileformat': 'csv',
+                   'food_type': 'general'})
+    assert store.load_from({'template': 'financial',
+                            'aspect': 'price',
+                            'food_type': 'general'}) == REFERENCE

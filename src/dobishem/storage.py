@@ -255,6 +255,14 @@ class Storage:
             os.path.join(self.base,
                          self.get_template(template, kwargs) % (self.defaults | kwargs)))
 
+    @staticmethod
+    def _get_template(raw):
+        return ('absolute' if os.path.isabs(raw) else 'relative') if isinstance(raw, str) else raw.get('template', True)
+
+    @staticmethod
+    def _get_location(raw):
+        return {'str': raw} if isinstance(raw, str) else {k: v for k, v in raw.items() if k != 'template'}
+
     def glob(self, pattern, template, **kwargs):
         return glob.glob(self.resolve(template, kwargs)+pattern)
 
@@ -269,7 +277,7 @@ class Storage:
 
     def load_from(self, location):
         return self.load(location.get('template', True),
-                         **{k: v for k, v in location.items() if k != 'template'})
+                         **self._get_location(location))
 
     def save(self, data, template, **kwargs):
         return save(self.resolve(template, kwargs),
@@ -278,22 +286,37 @@ class Storage:
     def save_to(self, data, location):
         return self.save(data,
                          location.get('template', True),
-                         **{k: v for k, v in location.items() if k != 'template'})
+                         **self._get_location(location))
 
 class UsingFiles(Storage):
 
-    def __init__(self, inputs, outputs, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, inputs, outputs, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.inputs = inputs
         self.outputs = outputs
 
+    def __iter__(self):
+        print("UsingFiles return self as iterator with inputs", self.inputs, "and outputs", self.outputs)
+        return self
+
     def __next__(self):
         for location in self.inputs:
+            print("input location", location)
             yield self.load_from(location)
+        raise StopIteration
 
     def save(self, *values):
         for location, content in zip(self.outputs, values).items():
+            print("writing to", location)
             self.save_to(content, location)
+
+    def __enter__(self):
+        print("UsingFiles entering with inputs", self.inputs, "and outputs", self.outputs)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            print("exception", exc_type, exc_value)
 
 def function_cached_with_file(function, filename):
     """Read a file and return its contents.

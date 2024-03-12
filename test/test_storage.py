@@ -1,6 +1,7 @@
 from collections import defaultdict
 from frozendict import frozendict
 import os
+import pytest
 import dobishem.storage
 
 REFERENCE = [ {'Date': "2023-12-09", 'Item': "akullore", 'Price': "1.00"},
@@ -78,3 +79,25 @@ def test_storage_class(tmp_path):
     assert store.load_from({'template': 'financial',
                             'aspect': 'price',
                             'food_type': 'general'}) == REFERENCE
+
+@pytest.mark.skip(reason="not working yet; crashes")
+def test_using_files(tmp_path):
+    def divmod(a, b):
+        a, b = int(a), int(b)
+        return str(a/b) + "\n", str(a%b) + "\n"
+    with open(os.path.join(tmp_path, "seven"), 'w') as outstream:
+        outstream.write("7\n")
+    with open(os.path.join(tmp_path, "twelve"), 'w') as outstream:
+        outstream.write("12\n")
+    with dobishem.storage.UsingFiles(["twelve", "seven"],
+                                     ["div", "mod"],
+                                     {'relative': "%s", 'absolute': "%s"},
+                                     {},
+                                     base=tmp_path) as filer:
+        print("filer is", filer)
+        x, y = divmod(*filer)
+        # filer.save(x, y)
+    with open(os.path.join(tmp_path, "div")) in instream:
+        assert instream.read() == "1.7142857142857142\n"
+    with open(os.path.join(tmp_path, "mod")) in instream:
+        assert instream.read() == "5\n"

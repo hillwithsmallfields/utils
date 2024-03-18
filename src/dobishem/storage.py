@@ -196,6 +196,8 @@ def save(
             print("Writing", filename)
     return WRITERS[os.path.splitext(filename)[1]](filename, data)
 
+TEMPLATE_PARAM_RE = "%\\(([a-zA-Z0-9_]+)\\)"
+
 class Storage:
 
     """A storage handler class,
@@ -206,22 +208,45 @@ class Storage:
             templates,
             defaults,
             base="."):
-        self.templates = templates
+        self.templates = {}
+        self.templates_by_params = {}
+        for template in templates:
+            self.add_template(template)
         self.defaults = defaults
         self.base = base
 
+    def add_template(self, name, template):
+        self.templates[name] = template
+        self.templates_by_params[self._param_key(template)] = template
+
     def resolve(self,
-                template='default',
+                template=None,
                 **kwargs):
+        """Return the filename string made from the selected template."""
         return _expand(
             os.path.join(
                 self.base,
-                self.templates.get(template, 'default') % (self.defaults | kwargs)))
+                (self.templates.get(template, 'default')
+                 if template
+                 else self.template_for_kwargs(kwargs)) % (self.defaults | kwargs)))
+
+    def template_for_kwargs(self, kwargs):
+        """Choose a template that uses the given parameters."""
+        return self.templates_by_params[self._param_key(template)]
+
+    def _param_key(template):
+        """Make a key from the parameters used in a template.
+        This is used for finding a template to match the given parameters."""
+        return ":".join(sorted([param.group(1)
+                                for param in TEMPLATE_PARAM_RE.finditer(template)]))
 
     def open_for_read(template, **kwargs):
+        """Return a file handle suitable for reading."""
         return open_for_read(self.resolve(template, kwargs))
 
     def open_for_write(template, **kwargs):
+        """Return a file handle suitable for writing.
+        The directory containing the file will have been created if necessary."""
         return open_for_write(self.resolve(template, kwargs))
 
     def load(self, template, **kwargs):

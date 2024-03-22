@@ -15,6 +15,7 @@ import csv
 import glob
 import json
 import os
+import re
 import tempfile
 import yaml
 
@@ -196,7 +197,7 @@ def save(
             print("Writing", filename)
     return WRITERS[os.path.splitext(filename)[1]](filename, data)
 
-TEMPLATE_PARAM_RE = "%\\(([a-zA-Z0-9_]+)\\)"
+TEMPLATE_PARAM_RE = re.compile("%\\(([a-zA-Z0-9_]+)\\)")
 
 class Storage:
 
@@ -210,14 +211,18 @@ class Storage:
             base="."):
         self.templates = {}
         self.templates_by_params = {}
-        for template in templates:
-            self.add_template(template)
+        for name, template in templates.items():
+            self.add_template(name, template)
         self.defaults = defaults
         self.base = base
 
     def add_template(self, name, template):
         self.templates[name] = template
-        self.templates_by_params[self._param_key(template)] = template
+        key = self._key_for_template(template)
+        print("adding template", template, "with name", name, "and key", key)
+        if key in self.templates_by_params:
+            print("Warning: template already defined for", key)
+        self.templates_by_params[key] = template
 
     def resolve(self,
                 template=None,
@@ -232,19 +237,31 @@ class Storage:
 
     def template_for_kwargs(self, kwargs):
         """Choose a template that uses the given parameters."""
-        return self.templates_by_params[self._param_key(template)]
+        key = self._params_key(kwargs.keys())
+        if key not in self.templates_by_params:
+            print("Key", key, "not found in template collection")
+            print("Available templates are:")
+            for k in sorted(self.templates_by_params.keys()):
+                print(k, "-->", self.templates_by_params[k])
+            raise KeyError("Template for %s not defined" % key)
+        return self.templates_by_params[key]
 
-    def _param_key(template):
+    @staticmethod
+    def _params_key(param_names):
+        """Return the key for a collection of parameter names."""
+        return ":".join(sorted(param_names))
+
+    def _key_for_template(self, template):
         """Make a key from the parameters used in a template.
         This is used for finding a template to match the given parameters."""
-        return ":".join(sorted([param.group(1)
-                                for param in TEMPLATE_PARAM_RE.finditer(template)]))
+        return self._params_key([param.group(1)
+                                 for param in TEMPLATE_PARAM_RE.finditer(template)])
 
-    def open_for_read(template, **kwargs):
+    def open_for_read(self, template, **kwargs):
         """Return a file handle suitable for reading."""
         return open_for_read(self.resolve(template, kwargs))
 
-    def open_for_write(template, **kwargs):
+    def open_for_write(self, template, **kwargs):
         """Return a file handle suitable for writing.
         The directory containing the file will have been created if necessary."""
         return open_for_write(self.resolve(template, kwargs))

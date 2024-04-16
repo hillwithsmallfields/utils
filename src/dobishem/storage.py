@@ -355,7 +355,7 @@ def combined(
                  verbose=verbose,
                  messager=messager)
             if (modified(destination)
-                < modified(most_recently_modified(origins)))
+                <= modified(most_recently_modified(origins)))
             else [reload_entry
                   for reload_raw in load(destination,
                                          verbose=verbose,

@@ -18,6 +18,7 @@ import os
 import re
 import tempfile
 import yaml
+import dobishem.tabular_text
 
 def _expand(filename):
     """Expand environment variables and '`~' in a filename."""
@@ -158,16 +159,30 @@ def write_yaml(filename, data):
         yaml.dump(data, outstream)
     return data
 
+def read_orgtable(filename):
+    """Read an orgtable file."""
+    with open_for_read(filename) as instream:
+        data, _colnames = dobishem.tabular_text.read_tabular_to_dicts(instream)
+        return list(data)
+
+def write_orgtable(filename, data):
+    """Write an orgtable file."""
+    with open_for_write(filename) as outstream:
+        outstream.write(dobishem.tabular_text.dicts_to_tabular_string(data))
+    return data
+
 READERS = {
     ".csv": default_read_csv,
     ".json": read_json,
     ".yaml": read_yaml,
+    ".table": read_orgtable,
     }
 
 WRITERS = {
     ".csv": default_write_csv,
     ".json": write_json,
     ".yaml": write_yaml,
+    ".table": write_orgtable,
     }
 
 def load(

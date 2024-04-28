@@ -143,7 +143,7 @@ def read_json(filename):
 
 def write_json(filename, data):
     """Write a JSON file."""
-    with open_for_read(filename, 'w') as outstream:
+    with open_for_write(filename) as outstream:
         json.dump(data, outstream)
     return data
 
@@ -154,7 +154,7 @@ def read_yaml(filename):
 
 def write_yaml(filename, data):
     """Write a YAML file."""
-    with open_for_read(filename, 'w') as outstream:
+    with open_for_write(filename) as outstream:
         yaml.dump(data, outstream)
     return data
 

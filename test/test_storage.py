@@ -12,6 +12,9 @@ REFERENCE_AS_SET = defaultdict(set)
 for row in REFERENCE:
     REFERENCE_AS_SET[row['Date']].add(frozendict(row))
 
+DEFAULTS = {}
+TEMPLATES = {'by_place': "%(country)s/%(region)s.json"}
+
 def xrow(row):
     return ({'Date': row['Date'],
             'Item': row['Item'],
@@ -58,3 +61,11 @@ def test_filtered_csv(tmp_path):
     assert dobishem.storage.read_csv(filename,
                                      key_column='Date',
                                      transform_row=lambda row: xrow)
+
+def test_template_selection(tmp_path):
+    store = dobishem.storage.Storage(templates=TEMPLATES,
+                                     defaults=DEFAULTS,
+                                     base=tmp_path)
+    store.save(REFERENCE, region="Tiranë", country="Shqiperi")
+    assert dobishem.storage.read_json(
+        os.path.join(tmp_path, "Shqiperi", "Tiranë.json")) == REFERENCE
